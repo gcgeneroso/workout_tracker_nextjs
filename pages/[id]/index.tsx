@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import dbConnect from "../../lib/dbConnect";
-import Pet, { Pets } from "../../models/Pet";
+import Workout, { Workouts } from "../../models/Workout";
 import { GetServerSideProps, GetServerSidePropsContext } from "next";
 import { ParsedUrlQuery } from "querystring";
 
@@ -11,55 +11,35 @@ interface Params extends ParsedUrlQuery {
 }
 
 type Props = {
-  pet: Pets;
+  workout: Workouts;
 };
 
 /* Allows you to view pet card info and delete pet card*/
-const PetPage = ({ pet }: Props) => {
+const WorkoutPage = ({ workout }: Props) => {
   const router = useRouter();
   const [message, setMessage] = useState("");
   const handleDelete = async () => {
-    const petID = router.query.id;
+    const workoutID = router.query.id;
 
     try {
-      await fetch(`/api/pets/${petID}`, {
+      await fetch(`/api/workouts/${workoutID}`, {
         method: "Delete",
       });
       router.push("/");
     } catch (error) {
-      setMessage("Failed to delete the pet.");
+      setMessage("Failed to delete the workout.");
     }
   };
 
   return (
-    <div key={pet._id}>
+    <div key={workout._id}>
       <div className="card">
-        <img src={pet.image_url} />
-        <h5 className="pet-name">{pet.name}</h5>
+        <h5 className="workout-date">{`${workout.prettyWorkoutDate}`}</h5>
         <div className="main-content">
-          <p className="pet-name">{pet.name}</p>
-          <p className="owner">Owner: {pet.owner_name}</p>
-
-          {/* Extra Pet Info: Likes and Dislikes */}
-          <div className="likes info">
-            <p className="label">Likes</p>
-            <ul>
-              {pet.likes.map((data, index) => (
-                <li key={index}>{data} </li>
-              ))}
-            </ul>
-          </div>
-          <div className="dislikes info">
-            <p className="label">Dislikes</p>
-            <ul>
-              {pet.dislikes.map((data, index) => (
-                <li key={index}>{data} </li>
-              ))}
-            </ul>
-          </div>
+          <p className="workout-weight">Weight: {workout.weight}</p>
 
           <div className="btn-container">
-            <Link href={`/${pet._id}/edit`}>
+            <Link href={`/${workout._id}/edit`}>
               <button className="btn edit">Edit</button>
             </Link>
             <button className="btn delete" onClick={handleDelete}>
@@ -84,22 +64,24 @@ export const getServerSideProps: GetServerSideProps<Props, Params> = async ({
     };
   }
 
-  const pet = await Pet.findById(params.id).lean();
+  const workout = await Workout.findById(params.id).lean();
 
-  if (!pet) {
+  if (!workout) {
     return {
       notFound: true,
     };
   }
 
   /* Ensures all objectIds and nested objectIds are serialized as JSON data */
-  const serializedPet = JSON.parse(JSON.stringify(pet));
+  const serializedWorkout = JSON.parse(JSON.stringify(workout));
+  const prettyWorkoutDate = new Date(serializedWorkout.workoutDate).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC'})
+  serializedWorkout['prettyWorkoutDate'] = prettyWorkoutDate
 
   return {
     props: {
-      pet: serializedPet,
+      workout: serializedWorkout,
     },
   };
 };
 
-export default PetPage;
+export default WorkoutPage;
