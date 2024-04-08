@@ -1,47 +1,27 @@
 import Link from "next/link";
 import dbConnect from "../lib/dbConnect";
-import Pet, { Pets } from "../models/Pet";
+import Workout, { Workouts } from "../models/Workout";
 import { GetServerSideProps } from "next";
 
 type Props = {
-  pets: Pets[];
+  workouts: Workouts[];
 };
 
-const Index = ({ pets }: Props) => {
+const Index = ({ workouts }: Props) => {
   return (
     <>
-      {pets.map((pet) => (
-        <div key={pet._id}>
+      {workouts.map((workout) => (
+        <div key={workout._id}>
           <div className="card">
-            <img src={pet.image_url} />
-            <h5 className="pet-name">{pet.name}</h5>
+            <h5 className="workout-date">{`${workout.prettyWorkoutDate}`}</h5>
             <div className="main-content">
-              <p className="pet-name">{pet.name}</p>
-              <p className="owner">Owner: {pet.owner_name}</p>
-
-              {/* Extra Pet Info: Likes and Dislikes */}
-              <div className="likes info">
-                <p className="label">Likes</p>
-                <ul>
-                  {pet.likes.map((data, index) => (
-                    <li key={index}>{data} </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="dislikes info">
-                <p className="label">Dislikes</p>
-                <ul>
-                  {pet.dislikes.map((data, index) => (
-                    <li key={index}>{data} </li>
-                  ))}
-                </ul>
-              </div>
+              <p className="workout-weight">{workout.weight}</p>
 
               <div className="btn-container">
-                <Link href={{ pathname: "/[id]/edit", query: { id: pet._id } }}>
+                <Link href={{ pathname: "/[id]/edit", query: { id: workout._id } }}>
                   <button className="btn edit">Edit</button>
                 </Link>
-                <Link href={{ pathname: "/[id]", query: { id: pet._id } }}>
+                <Link href={{ pathname: "/[id]", query: { id: workout._id } }}>
                   <button className="btn view">View</button>
                 </Link>
               </div>
@@ -58,15 +38,17 @@ export const getServerSideProps: GetServerSideProps<Props> = async () => {
   await dbConnect();
 
   /* find all the data in our database */
-  const result = await Pet.find({});
+  const result = await Workout.find({}).sort({'workoutDate': -1});
 
   /* Ensures all objectIds and nested objectIds are serialized as JSON data */
-  const pets = result.map((doc) => {
-    const pet = JSON.parse(JSON.stringify(doc));
-    return pet;
+  const workouts = result.map((doc) => {
+    const workout = JSON.parse(JSON.stringify(doc));
+    const prettyWorkoutDate = new Date(workout.workoutDate).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC'})
+    workout['prettyWorkoutDate'] = prettyWorkoutDate
+    return workout;
   });
 
-  return { props: { pets: pets } };
+  return { props: { workouts: workouts } };
 };
 
 export default Index;
